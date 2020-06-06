@@ -19,12 +19,14 @@ package chargeoptimizer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.TreeMap;
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -47,6 +49,12 @@ public class EntsoeDayAhead implements CostSource {
     private final ZoneId timezone;
     private final String securityToken;
     private int maxCacheSize = 5000;
+    
+    // if the server answered BAD REQUEST, for some time do not try again the same request or a
+    // request for an even earlier time
+    private ZonedDateTime unavailableDay = null;
+    private LocalDateTime wasUnavailableAt = LocalDateTime.MIN;
+    private Duration coolOffTime = Duration.ofMinutes(5);
     
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMddHHmm");
@@ -98,6 +106,17 @@ public class EntsoeDayAhead implements CostSource {
         
         final ZonedDateTime dayStart = dayStartLocal.withZoneSameInstant(TimeUtils.UTC);
         final ZonedDateTime dayEnd = dayEndLocal.withZoneSameInstant(TimeUtils.UTC);
+        
+        // field off requests too far in the future for day-ahead prices
+        if (time.isAfter(TimeUtils.now().plusDays(2))) {
+            logger.debug("Ignored request too far in the future.");
+            return;
+        }
+        // if a similar request has failed recently, do not try again now
+        if (unavailableDay != null && unavailableDay.compareTo(dayStart) <= 0)
+            if (TimeUtils.now().isBefore(wasUnavailableAt.plus(coolOffTime)))
+                return;
+
         logger.info("Fetching data from " + dayStart + " to " + dayEnd + ".");
         
         try {
@@ -107,8 +126,16 @@ public class EntsoeDayAhead implements CostSource {
                     "&periodStart=" + dayStart.format(DATE_FORMAT) +
                     "&periodEnd=" + dayEnd.format(DATE_FORMAT));
 
-            try (InputStream input = url.openConnection().getInputStream()) {
-                loadXML(input);
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+            if (conn.getResponseCode() == 400) {
+                logger.warn("Server returned 400 BAD REQUEST.");
+                // cache error response for a certain time
+                unavailableDay = dayStart;
+                wasUnavailableAt = TimeUtils.now();
+            } else {
+                try (InputStream input = conn.getInputStream()) {
+                    loadXML(input);
+                }
             }
         } catch (IOException | XMLStreamException  ex) {
             logger.error("Could not fetch data.", ex);
