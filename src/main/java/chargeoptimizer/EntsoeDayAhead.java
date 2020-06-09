@@ -45,14 +45,14 @@ public class EntsoeDayAhead implements CostSource {
     final Logger logger = LoggerFactory.getLogger(EntsoeDayAhead.class);
     
     private final TreeMap<LocalDateTime, Double> prices = new TreeMap<>();
-    private final String domain;
+    private final String areaEIC;
     private final ZoneId timezone;
     private final String securityToken;
     private int maxCacheSize = 5000;
     
     // if the server answered BAD REQUEST, for some time do not try again the same request or a
     // request for an even earlier time
-    private ZonedDateTime unavailableDay = null;
+    private LocalDateTime unavailableDay = null;
     private LocalDateTime wasUnavailableAt = LocalDateTime.MIN;
     private Duration coolOffTime = Duration.ofMinutes(5);
     
@@ -60,8 +60,8 @@ public class EntsoeDayAhead implements CostSource {
             DateTimeFormatter.ofPattern("yyyyMMddHHmm");
     
     /**
-     * Day-ahead price information for a certain area ("domain"). A list of
-     * valid domains can be found at
+     * Day-ahead price information for a certain area.
+     * A list of valid area EIC codes can be found at
      * <a href="https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html#_areas">
      * https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html#_areas</a>.
      * The time zone is necessary to calculate the local start and end of day.
@@ -69,12 +69,12 @@ public class EntsoeDayAhead implements CostSource {
      * can get by registering at <a href="https://transparency.entsoe.eu/">
      * https://transparency.entsoe.eu/</a> and then writing to
      * <a href="mailto:transparency@entsoe.eu">transparency@entsoe.eu</a>.
-     * @param domain 
+     * @param areaEIC 
      * @param timezone
      * @param securityToken
      */
-    public EntsoeDayAhead(String domain, ZoneId timezone, String securityToken) {
-        this.domain = domain;
+    public EntsoeDayAhead(String areaEIC, ZoneId timezone, String securityToken) {
+        this.areaEIC = areaEIC;
         this.timezone = timezone;
         this.securityToken = securityToken;
     }
@@ -104,8 +104,8 @@ public class EntsoeDayAhead implements CostSource {
         final ZonedDateTime dayStartLocal = timeLocal.truncatedTo(ChronoUnit.DAYS);
         final ZonedDateTime dayEndLocal = dayStartLocal.plus(1, ChronoUnit.DAYS);
         
-        final ZonedDateTime dayStart = dayStartLocal.withZoneSameInstant(TimeUtils.UTC);
-        final ZonedDateTime dayEnd = dayEndLocal.withZoneSameInstant(TimeUtils.UTC);
+        final LocalDateTime dayStart = dayStartLocal.withZoneSameInstant(TimeUtils.UTC).toLocalDateTime();
+        final LocalDateTime dayEnd = dayEndLocal.withZoneSameInstant(TimeUtils.UTC).toLocalDateTime();
         
         // field off requests too far in the future for day-ahead prices
         if (time.isAfter(TimeUtils.now().plusDays(2))) {
@@ -117,20 +117,24 @@ public class EntsoeDayAhead implements CostSource {
             if (TimeUtils.now().isBefore(wasUnavailableAt.plus(coolOffTime)))
                 return;
 
-        logger.info("Fetching data from " + dayStart + " to " + dayEnd + ".");
+        fetchCosts(dayStart, dayEnd);
+    }
+    
+    protected void fetchCosts(LocalDateTime start, LocalDateTime end) {
+        logger.info("Fetching data from " + start + " to " + end + ".");
         
         try {
             URL url = new URL("https://transparency.entsoe.eu/api?securityToken=" +
                     securityToken + "&documentType=A44" +
-                    "&in_Domain=" + domain + "&out_Domain=" + domain +
-                    "&periodStart=" + dayStart.format(DATE_FORMAT) +
-                    "&periodEnd=" + dayEnd.format(DATE_FORMAT));
+                    "&in_Domain=" + areaEIC + "&out_Domain=" + areaEIC +
+                    "&periodStart=" + start.format(DATE_FORMAT) +
+                    "&periodEnd=" + end.format(DATE_FORMAT));
 
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             if (conn.getResponseCode() == 400) {
                 logger.warn("Server returned 400 BAD REQUEST.");
                 // cache error response for a certain time
-                unavailableDay = dayStart;
+                unavailableDay = start;
                 wasUnavailableAt = TimeUtils.now();
             } else {
                 try (InputStream input = conn.getInputStream()) {
@@ -139,7 +143,7 @@ public class EntsoeDayAhead implements CostSource {
             }
         } catch (IOException | XMLStreamException  ex) {
             logger.error("Could not fetch data.", ex);
-        }
+        }        
     }
     
     private void loadXML(InputStream source) throws XMLStreamException {
@@ -193,6 +197,10 @@ public class EntsoeDayAhead implements CostSource {
     public void setMaxCacheSize(int maxCacheSize) {
         this.maxCacheSize = maxCacheSize;
         if (prices.size() > maxCacheSize) prices.clear();
+    }
+    
+    protected TreeMap<LocalDateTime, Double> getPrices() {
+        return new TreeMap<>(prices);
     }
     
 }
