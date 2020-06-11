@@ -27,7 +27,14 @@ public interface Charger {
         NO_CAR,
         CAR_CONNECTED,
         CHARGING,
-        ERROR
+        ERROR;
+        
+        /**
+         * @return true if the car is connected (even when the state is CHARGING)
+         */
+        public boolean isConnected() {
+            return this == CAR_CONNECTED || this == CHARGING;
+        }
     }
     
     /**
