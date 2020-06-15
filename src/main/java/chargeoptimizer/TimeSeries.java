@@ -42,6 +42,11 @@ public class TimeSeries<Item extends Object> {
             this.time = time;
             this.item = item;
         }
+        
+        @Override
+        public String toString() {
+            return "[" + time + ", " + item + "]";
+        }
     }
     
     /**
