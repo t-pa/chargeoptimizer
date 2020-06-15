@@ -16,18 +16,40 @@
  */
 package chargeoptimizer;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Frequently used time-related functions.
  */
 public class TimeUtils {
+    /**
+     * UTC time zone constant
+     */
     public static final ZoneId UTC = ZoneId.of("UTC");
 
+    /**
+     * Get current UTC time.
+     * @return the time
+     */
     public static LocalDateTime now() {
         return Instant.now().atZone(UTC).toLocalDateTime();
+    }
+    
+    /**
+     * Round time to a given granularity; the time is always rounded towards the start of the day
+     * and the rounded time is an integer multiple of granularity after the start of the day.
+     * @param time
+     * @param granularity
+     * @return the rounded time
+     */
+    public static LocalDateTime roundTimeTo(LocalDateTime time, Duration granularity) {
+        LocalDateTime startOfDay = time.truncatedTo(ChronoUnit.DAYS);
+        long l = Duration.between(startOfDay, time).dividedBy(granularity);
+        return startOfDay.plus(granularity.multipliedBy(l));
     }
     
     private TimeUtils() {
