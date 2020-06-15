@@ -21,6 +21,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,11 @@ public class FileCharger implements Charger {
             properties.setProperty(CAR_CONNECTED, "false");
             properties.setProperty(CHARGING, "false");
             properties.setProperty(ENABLED, "false");
+            try {
+                writeProperties();
+            } catch (IOException ex1) {
+                logger.error("Could not write charger file.", ex);
+            }
         }
     }
             
