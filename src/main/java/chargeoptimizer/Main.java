@@ -16,13 +16,112 @@
  */
 package chargeoptimizer;
 
+import chargeoptimizer.webserver.Webserver;
+import java.io.FileReader;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.ZoneId;
+import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Main {
 
+    static final Logger logger = LoggerFactory.getLogger(Main.class);
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        
+        logger.info("Loading configuration...");
+        
+        Properties config = new Properties();
+        if (args.length < 1) {
+            logger.info("Running with default configuration. To change this, start this "+
+                    "program with a configuration file as the command line parameter.");
+        } else {
+            try {
+                config.load(new FileReader(args[0]));
+            } catch (IOException ex) {
+                logger.error("Could not read configuration file " + args[0] + ".", ex);
+                System.exit(1);
+            }
+        }
+        
+        ChargeOptimizer chargeOptimizer = new ChargeOptimizer();
+        
+        // Charger
+        switch (config.getProperty("charger", "File")) {
+            case "Wallbe":
+                String host = config.getProperty("wallbeCharger.host", "192.168.0.8");
+                int port = Integer.parseInt(config.getProperty("wallbeCharger.port", "502"));
+                chargeOptimizer.setCharger(new WallbeCharger(host, port));
+                break;
+                
+            case "File":
+                String filename = config.getProperty("fileCharger.filename", "/tmp/filecharger.txt");
+                chargeOptimizer.setCharger(new FileCharger(filename));
+                break;
+                
+            default:
+                logger.error("Unknown charger type " + config.getProperty("charger"));
+                System.exit(1);
+        }
+        
+        // CostSource
+        switch (config.getProperty("costSource", "EntsoeAvgPrices")) {
+            case "EntsoeDayAhead":
+                String areaCode = config.getProperty("entsoe.areaCode", "10Y1001A1001A82H");
+                ZoneId timezone = ZoneId.of(config.getProperty("entsoe.timezone", "Europe/Berlin"));
+                String securityToken =  config.getProperty("entsoe.securityToken");
+                chargeOptimizer.setCostSource(new EntsoeDayAhead(areaCode, timezone, securityToken));
+                break;
+                
+            case "EntsoeAvgPrices":
+                areaCode = config.getProperty("entsoe.areaCode", "10Y1001A1001A82H");
+                timezone = ZoneId.of(config.getProperty("entsoe.timezone", "Europe/Berlin"));
+                chargeOptimizer.setCostSource(new EntsoeAvgPrices(areaCode, timezone));
+                break;
+                
+            default:
+                logger.error("Unknown cost source" + config.getProperty("costSource"));
+                System.exit(1);
+        }
+        
+        // Optimizer
+        switch (config.getProperty("optimizer", "CheapestTimesOptimizer")) {
+            case "CheapestTimesOptimizer":
+                int minimumChargingTime = Integer.parseInt(
+                        config.getProperty("minimumChargingTime", "180"));
+                chargeOptimizer.setOptimizer(
+                        new CheapestTimesOptimizer(Duration.ofMinutes(minimumChargingTime)));
+                break;
+                
+            default:
+                logger.error("Unknown optimizer " + config.getProperty("optimizer"));
+                System.exit(1);
+        }
+        int optimizationTime = Integer.parseInt(config.getProperty("optimizationTime", "480"));
+        chargeOptimizer.setOptimizationTime(Duration.ofMinutes(optimizationTime));
+        
+        // StatisticsDatabase
+        String dbUrl = config.getProperty("statisticsDatabase.url", "jdbc:h2:mem:chargeoptim");
+        String dbUser = config.getProperty("statisticsDatabase.user", "");
+        String dbPassword = config.getProperty("statisticsDatabase.password", "");
+        chargeOptimizer.setStatisticsDatabase(new StatisticsDatabase(dbUrl, dbUser, dbPassword));
+        
+        // Webserver
+        int port = Integer.parseInt(config.getProperty("webserver.port", "8081"));
+        Webserver webserver = new Webserver(chargeOptimizer, port);
+        
+        chargeOptimizer.start();
+        webserver.start();
+        try {
+            System.in.read();
+        } catch (IOException ex) { }
+        webserver.stop();
+        chargeOptimizer.stop();
     }
     
 }
