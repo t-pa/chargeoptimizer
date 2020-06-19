@@ -112,15 +112,17 @@ public class Main {
         chargeOptimizer.setStatisticsDatabase(new StatisticsDatabase(dbUrl, dbUser, dbPassword));
         
         // Webserver
-        int port = Integer.parseInt(config.getProperty("webserver.port", "8081"));
-        Webserver webserver = new Webserver(chargeOptimizer, port);
+        Webserver webserver = null;
+        int port = Integer.parseInt(config.getProperty("webserver.port", "0"));
+        if (port != 0)
+            webserver = new Webserver(chargeOptimizer, port);
         
         chargeOptimizer.start();
-        webserver.start();
+        if (webserver != null)  webserver.start();
         try {
             System.in.read();
         } catch (IOException ex) { }
-        webserver.stop();
+        if (webserver != null)  webserver.stop();
         chargeOptimizer.stop();
     }
     
