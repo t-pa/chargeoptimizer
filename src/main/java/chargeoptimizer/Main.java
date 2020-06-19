@@ -85,7 +85,7 @@ public class Main {
                 break;
                 
             default:
-                logger.error("Unknown cost source" + config.getProperty("costSource"));
+                logger.error("Unknown cost source " + config.getProperty("costSource"));
                 System.exit(1);
         }
         
@@ -119,6 +119,7 @@ public class Main {
         
         chargeOptimizer.start();
         if (webserver != null)  webserver.start();
+        logger.info("Press enter to stop.");
         try {
             System.in.read();
         } catch (IOException ex) { }
