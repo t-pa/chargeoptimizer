@@ -1,0 +1,12 @@
+sitemap default label="Standard"
+{
+    Frame label="Wallbox" {
+        Text item=ChargeOptimizer_CarConnected
+        Text item=ChargeOptimizer_Charging
+        Default item=ChargeOptimizer_LastStateChange
+        Default item=ChargeOptimizer_ChargingAllowedSinceOrWhen
+        Default item=ChargeOptimizer_Costs
+        Switch item=ChargeOptimizer_Override
+        Switch item=ChargeOptimizer_ChargingAllowed
+    }
+}

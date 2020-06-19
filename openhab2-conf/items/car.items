@@ -1,0 +1,13 @@
+String ChargeOptimizer_CarConnected "Car connected [%s]" { http="<[carStatusCache:5000:JSONPATH($.carConnected)]" }
+
+String ChargeOptimizer_Charging "Charging [%s]" { http="<[carStatusCache:5000:JSONPATH($.charging)]" }
+
+DateTime ChargeOptimizer_LastStateChange "Last state change [%1$ta %1$tR]" { http="<[carStatusCache:5000:JSONPATH($.lastStateChange)]" }
+
+DateTime ChargeOptimizer_ChargingAllowedSinceOrWhen "Charging allowed since or when [%1$ta %1$tR]" { http="<[carStatusCache:5000:JSONPATH($.chargingAllowedSinceOrWhen)]" }
+
+Number ChargeOptimizer_Costs "Costs (€/MWh) [%.2f]" { http="<[carStatusCache:5000:JSONPATH($.costs)]" }
+
+Switch ChargeOptimizer_Override "Manual override" { http="<[carStatusCache:5000:JS(getOverride.js)] >[ON:GET:http://192.168.188.34:8081/status/?override=true:] >[OFF:GET:http://192.168.188.34:8081/status/?override=false:]" }
+
+Switch ChargeOptimizer_ChargingAllowed "Charging allowed" { http="<[carStatusCache:5000:JS(getChargingAllowed.js)] >[ON:GET:http://192.168.188.34:8081/status/?chargingAllowed=true:] >[OFF:GET:http://192.168.188.34:8081/status/?chargingAllowed=false:]" }
