@@ -19,9 +19,10 @@ package chargeoptimizer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,27 +36,16 @@ public class StatisticsDatabase {
 
     private final JdbcConnectionPool connPool;
     
-    private static final String TABLE_DDL =
-        "CREATE TABLE IF NOT EXISTS chargelog (" +
-        "  time             TIMESTAMP  NOT NULL  PRIMARY KEY," +
-        "  carconnected     BOOLEAN    NOT NULL," +
-        "  charging         BOOLEAN    NOT NULL," +
-        "  chargingAllowed  BOOLEAN    NOT NULL," +
-        "  price            DOUBLE     NOT NULL" +
-        ")";
-    
     public StatisticsDatabase(String databaseUrl, String user, String password) {
-        connPool = JdbcConnectionPool.create(databaseUrl, user, password);
-        try (
-            Connection conn = connPool.getConnection();
-            Statement stmt = conn.createStatement();
-        ) {
-            stmt.execute(TABLE_DDL);
-        } catch (SQLException ex) {
+        logger.info("databaseUrl = " + databaseUrl + ", user = " + user);
+        
+        try {
+            Flyway.configure().dataSource(databaseUrl, user, password).load().migrate();
+        } catch (FlywayException ex) {
             logger.error("Error accessing database.", ex);
         }
         
-        logger.info("databaseUrl = " + databaseUrl + ", user = " + user);
+        connPool = JdbcConnectionPool.create(databaseUrl, user, password);
     }
     
     public void logState(LocalDateTime time, Charger.State state, boolean chargingAllowed, double price) {
