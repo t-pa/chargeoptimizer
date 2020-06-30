@@ -57,7 +57,7 @@ public class StatisticsDatabase {
             Connection conn = connPool.getConnection();
             PreparedStatement stmt = conn.prepareStatement(
                     "INSERT INTO chargelog" +
-                    "  (time, carconnected, charging, chargingAllowed, price) " +
+                    "  (logtime, carconnected, charging, chargingAllowed, price) " +
                     "VALUES" +
                     "  (?, ?, ?, ?, ?)");
         ) {
