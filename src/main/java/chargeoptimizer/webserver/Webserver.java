@@ -32,6 +32,8 @@ public class Webserver {
     private final Server server;
     
     public Webserver(ChargeOptimizer chargeOptimizer, int port) {
+        logger.info("port = " + port);
+
         server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);

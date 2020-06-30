@@ -47,6 +47,7 @@ public class Main {
                 logger.error("Could not read configuration file " + args[0] + ".", ex);
                 System.exit(1);
             }
+            logger.info("Configuration file " + args[0] + " loaded.");
         }
         
         ChargeOptimizer chargeOptimizer = new ChargeOptimizer();
@@ -104,6 +105,7 @@ public class Main {
         }
         int optimizationTime = Integer.parseInt(config.getProperty("optimizationTime", "480"));
         chargeOptimizer.setOptimizationTime(Duration.ofMinutes(optimizationTime));
+        logger.info("chargeOptimizer.optimizationTime = " + optimizationTime + " minutes");
         
         // StatisticsDatabase
         String dbUrl = config.getProperty("statisticsDatabase.url", "jdbc:h2:mem:chargeoptim");

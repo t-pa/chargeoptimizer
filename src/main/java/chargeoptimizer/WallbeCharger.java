@@ -41,6 +41,8 @@ public class WallbeCharger implements Charger {
     public WallbeCharger(String host, int port) {
         TcpParameters tcpParams = new TcpParameters(host, port, true);
         master = ModbusMasterFactory.createModbusMasterTCP(tcpParams);
+        
+        logger.info("host: " + host + ":" + port);
     }
     
     public void close() {

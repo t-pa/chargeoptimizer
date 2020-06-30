@@ -19,12 +19,16 @@ package chargeoptimizer;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An optimizer that guarantees a minimum charging time and distributes this time to the cheapest
  * time slots. After the minimum charging time has been reached, charging is also enabled.
  */
 public class CheapestTimesOptimizer implements Optimizer {
+    
+    final Logger logger = LoggerFactory.getLogger(CheapestTimesOptimizer.class);
     
     private Duration minimumChargingTime;
 
@@ -58,6 +62,8 @@ public class CheapestTimesOptimizer implements Optimizer {
     
     public CheapestTimesOptimizer(Duration minimumChargingTime) {
         this.minimumChargingTime = minimumChargingTime;
+        
+        logger.info("minimumChargingTime = " + minimumChargingTime);
     }
 
     public Duration getMinimumChargingTime() {

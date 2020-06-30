@@ -49,6 +49,7 @@ public class FileCharger implements Charger {
         
         try {
             readProperties();
+            logger.info("Connection file " + filename + " loaded.");
         } catch (IOException ex) {
             properties.setProperty(CAR_CONNECTED, "false");
             properties.setProperty(CHARGING, "false");
@@ -58,6 +59,7 @@ public class FileCharger implements Charger {
             } catch (IOException ex1) {
                 logger.error("Could not write charger file.", ex);
             }
+            logger.info("Created new connection file " + filename + ".");
         }
     }
             

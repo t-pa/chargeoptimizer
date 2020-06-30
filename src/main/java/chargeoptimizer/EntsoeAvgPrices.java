@@ -19,11 +19,15 @@ package chargeoptimizer;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Supplies average price data; useful when no internet connection is available.
  */
 public class EntsoeAvgPrices implements CostSource {
+    
+    final Logger logger = LoggerFactory.getLogger(EntsoeAvgPrices.class);
     
     private final String areaEIC;
     private final ZoneId timezone;
@@ -81,6 +85,8 @@ public class EntsoeAvgPrices implements CostSource {
             throw new IllegalArgumentException("Prices for area EIC " + areaEIC + " not available.");
         this.areaEIC = areaEIC;
         this.timezone = timezone;
+        
+        logger.info("areaEIC = " + areaEIC + ", timezone = " + timezone);
     }
     
     @Override

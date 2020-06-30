@@ -77,6 +77,8 @@ public class EntsoeDayAhead implements CostSource {
         this.areaEIC = areaEIC;
         this.timezone = timezone;
         this.securityToken = securityToken;
+        
+        logger.info("areaEIC = " + areaEIC + ", timezone = " + timezone);
     }
     
     @Override

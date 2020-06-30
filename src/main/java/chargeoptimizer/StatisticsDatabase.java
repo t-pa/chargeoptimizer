@@ -54,6 +54,8 @@ public class StatisticsDatabase {
         } catch (SQLException ex) {
             logger.error("Error accessing database.", ex);
         }
+        
+        logger.info("databaseUrl = " + databaseUrl + ", user = " + user);
     }
     
     public void logState(LocalDateTime time, Charger.State state, boolean chargingAllowed, double price) {
