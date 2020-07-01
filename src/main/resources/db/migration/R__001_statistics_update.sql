@@ -55,7 +55,7 @@ su_period_sums AS (
         SUM(CASE WHEN current_period_millis <= charge_millis THEN price*millis ELSE 0 END)
             AS unopt_pricesum,
         SUM(CASE WHEN current_period_millis <= charge_millis THEN millis ELSE 0 END) AS unopt_millis
-    FROM chargelog_sums
+    FROM su_chargelog_sums
     GROUP BY period
 )
 
