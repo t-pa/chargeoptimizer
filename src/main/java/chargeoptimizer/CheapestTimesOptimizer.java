@@ -34,22 +34,25 @@ public class CheapestTimesOptimizer implements Optimizer {
 
     @Override
     public TimeSeries<Boolean> optimize(TimeSeries<Double> costs) {
+        // sanitize costs: replace unknown costs with largest possible value
+        TimeSeries<Double> costs2 = costs.replaceNullsWith(Double.MAX_VALUE);
+        
         // sort times by cost
-        ArrayList<TimeSeries.Entry<Double>> times = costs.getEntries();
+        ArrayList<TimeSeries.Entry<Double>> times = costs2.getEntries();
         times.sort((o1, o2) -> Double.compare(o1.item, o2.item));
         
         // find maximum cost needed to get the minimum charging time
-        int timesNeeded = (int) minimumChargingTime.dividedBy(costs.getGranularity());
-        if (costs.getGranularity().multipliedBy(timesNeeded).compareTo(minimumChargingTime) < 0)
+        int timesNeeded = (int) minimumChargingTime.dividedBy(costs2.getGranularity());
+        if (costs2.getGranularity().multipliedBy(timesNeeded).compareTo(minimumChargingTime) < 0)
             timesNeeded++;
         Double maxCost = times.get(timesNeeded-1).item;
         
         // enable charging at all times where the cost is smaller than maxCost and also after the
         // minimum charging time has been reached
-        ArrayList<Boolean> enabled = new ArrayList<>(costs.size());
+        ArrayList<Boolean> enabled = new ArrayList<>(costs2.size());
         int count = 0;
-        for (LocalDateTime time : costs.getTimes()) {
-            if (costs.getValueAt(time) <= maxCost || count >= timesNeeded) {
+        for (LocalDateTime time : costs2.getTimes()) {
+            if (costs2.getValueAt(time) <= maxCost || count >= timesNeeded) {
                 count++;
                 enabled.add(true);
             } else {
@@ -57,7 +60,7 @@ public class CheapestTimesOptimizer implements Optimizer {
             }
         }
         
-        return new TimeSeries<>(costs.getStart(), costs.getGranularity(), enabled, false, true);
+        return new TimeSeries<>(costs2.getStart(), costs2.getGranularity(), enabled, false, true);
     }
     
     public CheapestTimesOptimizer(Duration minimumChargingTime) {

@@ -115,6 +115,13 @@ public class TimeSeries<Item extends Object> {
             Function<LocalDateTime, Item> items) {
         this(start, granularity, end, items, null, null);
     }
+    
+    public TimeSeries<Item> replaceNullsWith(Item replacementItem) {
+        ArrayList<Item> newItems = new ArrayList(items.size());
+        for (Item i : items)
+            newItems.add((i == null) ? replacementItem : i);
+        return new TimeSeries(start, granularity, newItems, itemBefore, itemAfter);
+    }
 
     /**
      * Get the value at a certain time. Times between sampling points are possible; the value is
