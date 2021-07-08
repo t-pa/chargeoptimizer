@@ -5,7 +5,7 @@ CREATE OR REPLACE VIEW statistics_update AS
 WITH
 
 /*  select all rows as new as or newer than the last statistics entry and add columns with the
-    previous connection state, the previous time and the next time */
+    previous connection state, the previous time and the next time; exclude entries with price NaN */
 su_chargelog_laglead AS (
     SELECT
         logtime, carconnected, charging, chargingallowed, price,
@@ -14,6 +14,7 @@ su_chargelog_laglead AS (
         LEAD(logtime) OVER (ORDER BY logtime) AS logtime_next
     FROM chargelog
     WHERE COALESCE(logtime >= (SELECT MAX(period_start) AS period_start FROM statistics), TRUE)
+        AND price <> SQRT(-1)
 ),
 
 /*  number periods; a new period begins when the connection state changes or when more than ten
@@ -44,7 +45,8 @@ su_chargelog_sums AS (
            period_prev AS (PARTITION BY period ORDER BY logtime RANGE UNBOUNDED PRECEDING)
 ), 
 
--- calculate sums over periods
+/*  calculate sums over periods (unopt_pricesum and unopt_millis may be zero if first entry is
+    larger than charging time (61 s > 60 s); workaround: charge_millis>120000 in the next step) */
 su_period_sums AS (
     SELECT
         period,
@@ -68,4 +70,4 @@ su_period_sums AS (
         pricesum / charge_millis AS avg_price,
         unopt_pricesum / unopt_millis AS avg_price_unopt
     FROM su_period_sums
-    WHERE charge_millis > 0
+    WHERE charge_millis > 120000
