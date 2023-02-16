@@ -126,7 +126,7 @@ public class EntsoeDayAhead implements CostSource {
         logger.info("Fetching data from " + start + " to " + end + ".");
         
         try {
-            URL url = new URL("https://transparency.entsoe.eu/api?securityToken=" +
+            URL url = new URL("https://web-api.tp.entsoe.eu/api?securityToken=" +
                     securityToken + "&documentType=A44" +
                     "&in_Domain=" + areaEIC + "&out_Domain=" + areaEIC +
                     "&periodStart=" + start.format(DATE_FORMAT) +
